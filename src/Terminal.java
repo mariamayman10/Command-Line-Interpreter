@@ -160,48 +160,12 @@ public class Terminal {
     public Terminal() {
         parser = new Parser();
     }
-    private static void removeEmptyDirectories(File directory) {
-        File[] files = directory.listFiles();
-
-        if (files != null) {
-            for (File file : files) {
-                if (file.isDirectory()) {
-                    removeEmptyDirectories(file);
-
-                    String[] fileList = file.list();
-                    if (fileList != null && fileList.length == 0) {
-                        System.out.println("Deleting empty directory: " + file.getAbsolutePath());
-
-                    }
-                }
-            }
-        }
+    public static void echo(String text) {
+        System.out.println(text);
     }
-    public static String touch(String arg) {
-        String output;
-        File file = new File(pwd(), arg);
-        if (file.exists()) {
-            output = "File already exist";
-        }else {
-            try {
-                if (file.createNewFile()) {
-                    output = "File created successfully";
-                } else {
-                    output = "Failed to create the file";
-                }
-            } catch (IOException e) {
-                output = "An error occurred";
-            }
-        }
-        return output;
-    }
-
-
-
     public static String pwd() {
         return System.getProperty("user.dir");
     }
-
     public static StringBuilder ls_r() {
         StringBuilder output = new StringBuilder();
         String path = System.getProperty("user.dir");
@@ -218,8 +182,7 @@ public class Terminal {
         }
         return output;
     }
-
-    public static StringBuilder mkdir(String[] args) {
+    public static StringBuilder mkdir(String[] args) {//handle forward slash
         StringBuilder output = new StringBuilder();
         for (String arg : args) {
             if (arg.contains("\\")) {
@@ -239,28 +202,34 @@ public class Terminal {
         }
         return output;
     }
-
     public static String rmdir(String arg) {
-        String output ;
+        StringBuilder output = new StringBuilder();
         if (Objects.equals(arg, "*")) {
-            File currentDirectory = new File(pwd());
-            removeEmptyDirectories(currentDirectory);
-            output = "Empty directories removed.";
-
+            File directory = new File(pwd());
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for(File file: files){
+                    if(file.isDirectory() && Objects.requireNonNull(file.list()).length == 0){
+                        output.append("Deleting empty directory: ").append(file.getName()).append("...").append('\n');
+                        if (file.delete()) output.append("Directory is deleted Successfully\n");
+                        else output.append("Failed to Delete Directory\n");
+                    }
+                }
+            }
         } else {
             Path path = Paths.get(arg);
             if (Files.exists(path) && Files.isDirectory(path)) {
                 File directory = new File(String.valueOf(path));
                 File[] files = directory.listFiles();
                 if (files != null && files.length == 0) {
-                    if (directory.delete()) output = "Directory is deleted Successfully";
-                    else output = "Failed to Delete Directory";
-                } else output = "Directory isn't empty";
-            } else output = "Invalid Path";
+                    output.append("Deleting empty directory: ").append(directory.getName()).append("...").append('\n');
+                    if (directory.delete()) output.append("Directory is deleted Successfully");
+                    else output.append("Failed to Delete Directory");
+                } else output.append("Directory isn't empty");
+            } else output.append("Invalid Path");
         }
-        return output;
+        return output.toString();
     }
-
     public static String rm(String arg) {
         String output ;
         File file = new File(pwd(), arg);
@@ -270,11 +239,24 @@ public class Terminal {
         } else output = "File doesn't exist";
         return output;
     }
-    public static void echo(String text) {
-        System.out.println(text);
+    public static String touch(String arg) {
+        String output;
+        File file = new File(pwd(), arg);
+        if (file.exists()) {
+            output = "File already exist";
+        }else {
+            try {
+                if (file.createNewFile()) {
+                    output = "File created successfully";
+                } else {
+                    output = "Failed to create the file";
+                }
+            } catch (IOException e) {
+                output = "An error occurred";
+            }
+        }
+        return output;
     }
-
-
     public void chooseCommandAction() throws IOException {
         while (true) {
             System.out.print('>');
@@ -316,37 +298,38 @@ public class Terminal {
                     }
                     writer.close();
                 } else {
-                    if (commandName.equals("pwd")) {
-                        System.out.println(pwd());
-                    } else if (commandName.equals("ls")) {
-                        StringBuilder output = ls_r();
-                        System.out.println(output.toString());
-                    } else if (commandName.equals("mkdir")) {
-                        System.out.println(mkdir(args));
-                    } else if(commandName.equals("touch")) {
-                        if (args.length == 1) {
-                            System.out.println(touch(args[0]));
-                        } else {
-                            System.out.println("Error: touch takes 1 argument");
+                    switch (commandName) {
+                        case "pwd" -> System.out.println(pwd());
+                        case "ls" -> {
+                            StringBuilder output = ls_r();
+                            System.out.println(output);
                         }
-                    }
-                    else if (commandName.equals("rmdir")) {
-                        if (args.length == 1) {
-                            if (args[0].equals("*")) {
-                                System.out.println(rmdir(args[0]));
+                        case "mkdir" -> System.out.println(mkdir(args));
+                        case "touch" -> {
+                            if (args.length == 1) {
+                                System.out.println(touch(args[0]));
                             } else {
-                                System.out.println(rmdir(args[0]));
+                                System.out.println("Error: touch takes 1 argument");
                             }
-                        } else {
-                            System.out.println("Error: rmdir takes 1 argument");
                         }
-                    } else if (commandName.equals("rm")) {
-                        System.out.println(rm(args[0]));
-                    } else if (commandName.equals("echo")) {
-                        if (args.length == 1) {
-                            echo(args[0]);
-                        } else {
-                            System.out.println("Error: echo take 1 argument ");
+                        case "rmdir" -> {
+                            if (args.length == 1) {
+                                if (args[0].equals("*")) {
+                                    System.out.println(rmdir(args[0]));
+                                } else {
+                                    System.out.println(rmdir(args[0]));
+                                }
+                            } else {
+                                System.out.println("Error: rmdir takes 1 argument");
+                            }
+                        }
+                        case "rm" -> System.out.println(rm(args[0]));
+                        case "echo" -> {
+                            if (args.length == 1) {
+                                echo(args[0]);
+                            } else {
+                                System.out.println("Error: echo take 1 argument ");
+                            }
                         }
                     }
                 }
