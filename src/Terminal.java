@@ -8,14 +8,13 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.util.Scanner;
 import java.nio.file.StandardCopyOption;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.Vector;
 import java.util.*;
 
 public class Terminal
 {
     static Parser parser;
-    Set<String> CommandHistory = new HashSet<>();
+    Vector<String> CommandHistory = new Vector<>();
     public Terminal() {
         parser = new Parser();
     }
@@ -27,12 +26,12 @@ public class Terminal
     }
     public static StringBuilder ls_r()
     {
-        StringBuilder output = new StringBuilder();             
-        String path = System.getProperty("user.dir");         
-        File directory = new File(path);                        
-        if (directory.exists() && directory.isDirectory()) {   
-            File[] files = directory.listFiles();               
-            if (files != null) {                                
+        StringBuilder output = new StringBuilder();
+        String path = System.getProperty("user.dir");
+        File directory = new File(path);
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
                 List<File> filesList = Arrays.asList(files);
                 Collections.reverse(filesList);
                 for (File file : filesList) {
@@ -144,9 +143,9 @@ public class Terminal
         File Dir1=new File(F1);
         File Dir2=new File(F2);
         if (!Dir1.exists() || !Dir1.canRead() || !Dir1.isDirectory())
-            System.err.println("The first Dir name you entered either doesn't exist or not readable or isn't a Dir,please enter a correct one");
+            System.err.println("The first Dir name you entered either doesn't exist or not readable or isn't a Dir");
         else if (!Dir2.exists() || !Dir1.canRead() || !Dir1.isDirectory())
-            System.err.println("The second Dir name you entered either doesn't exist or not readable or isn't a Dir,please enter a correct one");
+            System.err.println("The second Dir name you entered either doesn't exist or not readable or isn't a Dir" );
         else
         {
             if (Dir1.isDirectory())  //ie: you're copying SubDir not a file
@@ -198,7 +197,7 @@ public class Terminal
         }
         else
         {
-            System.err.println("The file name you entered either doesn't exist or not readable or isn't a file,please enter a correct one");
+            System.err.println("The file name you entered either doesn't exist or not readable or isn't a file");
         }
     }
     public static void cat_V2 (String File1,String File2) //this function takes TWO file names,concat them and print them
@@ -206,9 +205,9 @@ public class Terminal
         File MyFirstFile = new File(File1);
         File MySectFile = new File(File2);
         if (!MyFirstFile.exists() || !MyFirstFile.canRead() || !MyFirstFile.isFile())
-            System.err.println("The first file name you entered either doesn't exist or not readable or isn't a file,please enter a correct one");
+            System.err.println("The first file name you entered either doesn't exist or not readable or isn't a file");
         else if (!MySectFile.exists() || !MySectFile.canRead() || !MySectFile.isFile())
-            System.err.println("The second file name you entered either doesn't exist or not readable or isn't a file,please enter a correct one");
+            System.err.println("The second file name you entered either doesn't exist or not readable or isn't a file");
         else
         {
             try
@@ -232,6 +231,33 @@ public class Terminal
             {
                 System.err.println("An error occurred while reading the file: " + e.getMessage());
             }
+        }
+    }
+    public static void WC (String FName)
+    {
+        int Lines=0,Words=0,Chars=0;
+        File file = new File(FName);
+        if (!file.exists() || !file.isFile())
+            System.out.println("The file name you entered either doesn't exist or isn't a file.");
+        else
+        {
+            try
+            {
+                BufferedReader reader = new BufferedReader(new FileReader(file));
+                String line;
+                while ((line = reader.readLine()) != null)
+                {
+                    Lines++;
+                    Chars += line.length();
+                    Words += line.split("\\s+").length; // Counting words (split by spaces)
+                }
+                reader.close();
+            }
+            catch (IOException e)
+            {
+                System.err.println("An error occurred while reading the file: " + e.getMessage());
+            }
+            System.out.println(Lines + " " + Words + " " + Chars + " " + FName);
         }
     }
     public void chooseCommandAction() throws IOException
@@ -301,63 +327,135 @@ public class Terminal
                             CommandHistory.add("mkdir");
                         }
                         case "touch" -> {
-                            if (args.length == 1) {
+                            if (args.length == 1)
+                            {
                                 System.out.println(touch(args[0]));
+                                CommandHistory.add("touch");
+                                CommandHistory.add(args[0]);
                             } else {
                                 System.out.println("Error: touch takes 1 argument");
                             }
-                            CommandHistory.add("touch");
+
                         }
                         case "rmdir" -> {
-                            if (args.length == 1) {
-                                if (args[0].equals("*")) {
-                                    System.out.println(rmdir(args[0]));
-                                } else {
+                            if (args.length == 1)
+                            {
+                                if (args[0].equals("*"))
+                                {
                                     System.out.println(rmdir(args[0]));
                                 }
+                                else
+                                {
+                                    System.out.println(rmdir(args[0]));
+                                }
+                                CommandHistory.add("rmdir");
                             } else {
-                                System.out.println("Error: rmdir takes 1 argument");
+                                System.out.println("Error: rmdir takes ONLY 1 argument");
                             }
-                            CommandHistory.add("rmdir");
                         }
                         case "rm" -> {
-                            System.out.println(rm(args[0]));
-                            CommandHistory.add("rm");
+                            if (args.length == 1)
+                            {
+                                System.out.println(rm(args[0]));
+                                CommandHistory.add("rm");
+                                CommandHistory.add(args[0]);
+                            }
+                            else {
+                                System.out.println("Error: rm takes ONLY 1 argument");
+                            }
                         }
                         case "echo" -> {
-                            if (args.length == 1) {
+                            if (args.length == 1)
+                            {
                                 echo(args[0]);
+                                CommandHistory.add("echo");
+                                CommandHistory.add(args[0]);
                             } else {
                                 System.out.println("Error: echo take 1 argument ");
                             }
-                            CommandHistory.add("echo");
+
                         }
                         case "cp_r"->{
-                            CommandHistory.add("cp -r");
                             if (args.length==2)
+                            {
                                 cp_r(args[0],args[1]);
+                                CommandHistory.add("cp -r");
+                                CommandHistory.add(args[0]);
+                                CommandHistory.add(args[1]);
+                            }
                             else
                                 System.out.println("Error: cp -r takes ONLY 2 arguments ");
 
                         }
-                        case "cat"-> {
-                            CommandHistory.add("cat");
+                        case "WC"->{
                             if (args.length==1)
+                            {
+                                WC(args[0]);
+                                CommandHistory.add("WC");
+                                CommandHistory.add(args[0]);
+                            }
+                            else
+                                System.out.println("Error: WC takes ONLY 1 argument ");
+
+                        }
+                        case "cat"-> {
+                            if (args.length==1)
+                            {
                                 cat_V1(args[0]);
+                                CommandHistory.add("cat");
+                                CommandHistory.add(args[0]);
+                            }
                             else if (args.length==2)
-                                cat_V2(args[0],args[1]);
+                            {
+                                cat_V2(args[0], args[1]);
+                                CommandHistory.add("cat");
+                                CommandHistory.add(args[0]);
+                                CommandHistory.add("arg2");  //a flag for sec arg
+                                CommandHistory.add(args[1]);
+                            }
                             else
                                 System.out.println("Error: cat takes EITHER 1 OR 2 arguments ONLY ");
                         }
                         case "history"->{
                             CommandHistory.add("history");
-                            int idx=1;
-                            for (String Command : CommandHistory)
+                            int idx=0,OutPutCtr=1;
+                            while (idx<=CommandHistory.size())
                             {
-                                System.out.print(idx + ": ");
-                                System.out.println(Command);
-                                idx++;
+                                if (CommandHistory.get(idx).equals("touch") || CommandHistory.get(idx).equals("echo") || CommandHistory.get(idx).equals("WC") || CommandHistory.get(idx).equals("rm") || CommandHistory.get(idx).equals("rmdir"))
+                                {
+                                    System.out.println(OutPutCtr + " " + CommandHistory.get(idx) + " " + CommandHistory.get(idx+1));
+                                    idx+=2;
+                                    OutPutCtr++;
+                                }
+                                else if (CommandHistory.get(idx).equals("cp -r"))
+                                {
+                                    System.out.println(OutPutCtr + " " + CommandHistory.get(idx) + " " + CommandHistory.get(idx+1) + " " + CommandHistory.get(idx+2));
+                                    idx+=3;
+                                    OutPutCtr++;
+                                }
+                                else if (CommandHistory.get(idx).equals("cat"))
+                                {
+                                    if(!CommandHistory.get(idx+2).equals("arg2"))
+                                    {
+                                        System.out.println(OutPutCtr + " " + CommandHistory.get(idx) + " " + CommandHistory.get(idx+1));
+                                        idx+=2;
+                                        OutPutCtr++;
+                                    }
+                                    else
+                                    {
+                                        System.out.println(OutPutCtr + " " + CommandHistory.get(idx) + " " + CommandHistory.get(idx+1) + " " + CommandHistory.get(idx+3));
+                                        idx+=4;
+                                        OutPutCtr++;
+                                    }
+                                }
+                                else if (CommandHistory.get(idx).equals("ls -r") || CommandHistory.get(idx).equals("pwd") || CommandHistory.get(idx).equals("mkdir"))
+                                {
+                                    System.out.println(OutPutCtr + " " + CommandHistory.get(idx));
+                                    idx++;
+                                    OutPutCtr++;
+                                }
                             }
+                            System.out.println(OutPutCtr + " " + "History");
                         }
                     }
                 }
