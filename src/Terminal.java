@@ -6,25 +6,39 @@ import java.util.Scanner;
 import java.nio.file.StandardCopyOption;
 import java.util.Vector;
 import java.util.*;
+import java.nio.file.FileVisitResult;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 
-public class Terminal
-{
+
+public class Terminal {
     static Parser parser;
     Vector<String> CommandHistory = new Vector<>();
     public Terminal() {
         parser = new Parser();
     }
-    public static void echo(String text) {
-        System.out.println(text);
+    public static String echo(String arg) {
+        return arg;
     }
     public static String pwd() {
         return System.getProperty("user.dir");
     }
-    public static StringBuilder ls_r()
-    {
+    public static String ls() {
         StringBuilder output = new StringBuilder();
-        String path = System.getProperty("user.dir");
-        File directory = new File(path);
+        File directory = new File(pwd());
+        if (directory.exists() && directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    output.append(file.getName()).append(" ");
+                }
+            }
+        }
+        return String.valueOf(output);
+    }
+    public static String ls_r() {
+        StringBuilder output = new StringBuilder();
+        File directory = new File(pwd());
         if (directory.exists() && directory.isDirectory()) {
             File[] files = directory.listFiles();
             if (files != null) {
@@ -35,11 +49,9 @@ public class Terminal
                 }
             }
         }
-        return output;
+        return String.valueOf(output);
     }
-    public static StringBuilder mkdir(String[] args)
-    {//handle forward slash
-        StringBuilder output = new StringBuilder();
+    public static void mkdir(String[] args) {//handle forward slash
         for (String arg : args) {
             if (arg.contains("\\")) {
                 String newArg = arg.substring(0, arg.lastIndexOf("\\"));
@@ -47,459 +59,262 @@ public class Terminal
                 if (Files.exists(path) && Files.isDirectory(path)) {
                     String directoryName = arg.substring(arg.lastIndexOf("\\") + 1);
                     File directory = new File(newArg, directoryName);
-                    if (directory.mkdir()) output.append("Directory is Successfully Created" + '\n');
-                    else output.append("Directory Already Exists" + '\n');
-                } else output.append("Invalid Path, Directory isn't created" + '\n');
+                    if (!directory.mkdir()) System.err.println("Directory Already Exists");
+                } else System.err.println("Invalid Path, Directory isn't created");
             } else {
                 File directory = new File(pwd(), arg);
-                if (directory.mkdir()) output.append("Directory is Successfully Created" + '\n');
-                else output.append("Directory Already Exists" + '\n');
+                if (!directory.mkdir()) System.err.println("Directory Already Exists");
             }
         }
-        return output;
     }
-    public static String rmdir(String arg)
-    {
-        StringBuilder output = new StringBuilder();
+    public static void rmdir(String arg) {
         if (Objects.equals(arg, "*")) {
             File directory = new File(pwd());
             File[] files = directory.listFiles();
             if (files != null) {
                 for(File file: files){
                     if(file.isDirectory() && Objects.requireNonNull(file.list()).length == 0){
-                        output.append("Deleting empty directory: ").append(file.getName()).append("...").append('\n');
-                        if (file.delete()) output.append("Directory is deleted Successfully\n");
-                        else output.append("Failed to Delete Directory\n");
+                        if (!file.delete()) System.out.println(("Failed to Delete Directory"));
                     }
                 }
             }
         }
-        else
-        {
+        else {
             Path path = Paths.get(arg);
-            if (Files.exists(path) && Files.isDirectory(path))
-            {
+            if (Files.exists(path) && Files.isDirectory(path)) {
                 File directory = new File(String.valueOf(path));
                 File[] files = directory.listFiles();
-                if (files != null && files.length == 0)
-                {
-                    output.append("Deleting empty directory: ").append(directory.getName()).append("...").append('\n');
-                    if (directory.delete()) output.append("Directory is deleted Successfully");
-                    else output.append("Failed to Delete Directory");
+                if (files != null && files.length == 0) {
+                    if (!directory.delete()) System.err.println("Failed to Delete Directory");
                 }
                 else
-                    output.append("Directory isn't empty");
+                    System.err.println("Directory isn't empty");
             }
             else
-                output.append("Invalid Path");
+                System.err.println("Invalid Path");
         }
-        return output.toString();
     }
-    public static String rm(String arg)
-    {
-        String output ;
+    public static void rm(String arg) {
         File file = new File(pwd(), arg);
-        if (file.exists())
-        {
-            if (file.delete()) output = "File is deleted Successfully";
-            else
-                output = "Failed to delete the file";
+        if(!file.isFile() && file.isDirectory()){
+            System.err.println("Directory is given instead of File");
         }
-        else
-            output = "File doesn't exist";
-        return output;
+        else if (file.exists()){
+            if (!file.delete()) System.err.println("Failed to delete the file");
+        }
+        else System.err.println("File doesn't exist");
     }
-    public static String touch(String arg)
-    {
-        String output;
+    public static void touch(String arg) {
         File file = new File(pwd(), arg);
-        if (file.exists())
-        {
-            output = "File already exist";
+        if(!file.isFile() && file.isDirectory()){
+            System.err.println("It is an existed Directory");
         }
-        else
-        {
+        else if (file.exists())
+            System.err.println("File already exist");
+        else {
             try {
-                if (file.createNewFile())
-                {
-                    output = "File created successfully";
-                }
-                else
-                {
-                    output = "Failed to create the file";
-                }
+                if (!file.createNewFile())
+                    System.err.println("Failed to create the file");
             } catch (IOException e) {
-                output = "An error occurred";
+                System.err.println("Error occurred: " + e.getMessage());
             }
         }
-        return output;
     }
-/*    public static void cp_r (String F1,String F2) throws IOException
-    {
-        File Dir1=new File(F1);
-        File Dir2=new File(F2);
-        if (!Dir1.exists() || !Dir1.canRead() || !Dir1.isDirectory())
-            System.err.println("The first Dir name you entered either doesn't exist or not readable or isn't a Dir");
-        else if (!Dir2.exists() || !Dir1.canRead() || !Dir1.isDirectory())
-            System.err.println("The second Dir name you entered either doesn't exist or not readable or isn't a Dir" );
-        else
-        {
-            if (Dir1.isDirectory())  //ie: you're copying SubDir not a file
-            {
-                //we've firstly to know the names of the files and subdir in D1 in order to make files and subDir by their names in Dir2, so we use .list() to get the names and put them in FileNames array
-                String[] FirstDirNames=Dir1.list();
-                if (FirstDirNames != null)
-                {
-                    for (String Name:FirstDirNames)
-                    {
-                        File srcFile = new File(Dir1, Name);
-                        String srcFileName = srcFile.getName();
-                        File destFile = new File(Dir2, Name);
-                        String destFileName = destFile.getName();
-
-                        // Recursively copy subdirectories and their contents
-                        cp_r(srcFileName, destFileName);
+    public static void cp_r(String[] args) {
+        Path sourcePath = Paths.get(args[0]);
+        Path destinationPath = Paths.get(args[1]);
+        if (!Files.exists(sourcePath) || !Files.isReadable(sourcePath))
+            System.err.println("The source path is either missing or not readable.");
+        else if (!Files.exists(destinationPath) || !Files.isWritable(destinationPath))
+            System.err.println("The destination path is either missing or not writable.");
+        else {
+            try {
+                Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
+                    @Override
+                    public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                        Path targetPath = destinationPath.resolve(sourcePath.relativize(dir));
+                        Files.createDirectories(targetPath);
+                        return FileVisitResult.CONTINUE;
                     }
-                }
+
+                    @Override
+                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                        Path targetPath = destinationPath.resolve(sourcePath.relativize(file));
+                        Files.copy(file, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                        return FileVisitResult.CONTINUE;
+                    }
+                });
+            } catch (IOException e) {
+                System.err.println("Failed to copy files and directories: " + e.getMessage());
             }
-            else       //ie: you're copying a fi;e
-            {
-                Files.copy(Dir1.toPath(), Dir2.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
-        }
-    }*/
-
-    public static void cp_r(String sourceDir, String destinationDir) throws IOException
-    {
-        Path sourcePath = Paths.get(sourceDir);
-        Path destinationPath = Paths.get(destinationDir);
-        if (!Files.exists(sourcePath) || !Files.isDirectory(sourcePath) || !Files.isReadable(sourcePath))
-        {
-            System.err.println("The source directory is either missing, not readable, or not a directory.");
-        }
-        else if (!Files.exists(destinationPath) || !Files.isDirectory(destinationPath) || !Files.isWritable(destinationPath))
-        {
-            System.err.println("The destination directory is either missing, not writable, or not a directory.");
-        }
-        else
-        {
-            Deque<Path> stack = new ArrayDeque<>();
-            stack.push(sourcePath);
-
-            while (!stack.isEmpty())
-            {
-                Path currentPath = stack.pop();
-                Path targetPath = destinationPath.resolve(sourcePath.relativize(currentPath));
-
-                if (Files.isDirectory(currentPath))
-                {
-                    Files.createDirectories(targetPath);
-                    Files.list(currentPath).forEach(child -> stack.push(child));
-                }
-                else
-                {
-                    Files.copy(currentPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                }
-            }
-
-            System.out.println("Directory contents copied successfully.");
         }
     }
-
-    public static void cat_V1 (String InputFile)         //this function takes ONE file name and print its content
-    {
-        //we make an object of type File named "file" & put "InputFile" in it in order to make sure of its existency later
-        File file = new File(InputFile);
-        //Check if the file exists and is readable
-        if (file.exists() && file.isFile() && file.canRead())
-        {
-            try
-            {
-                //here, reader is an object of "BufferedReader" and it's function is to read content of file "file"
-                BufferedReader reader = new BufferedReader(new FileReader(file));
-                String line;
-                //we reach null if you reached the end of the file,so while the line is keeping reading "ie:not null" ,keep printing
-                while ((line = reader.readLine()) != null) {
-                    System.out.println(line);
-                }
-                reader.close();
-            }
-            catch (IOException e)
-            {
-                System.err.println("An error occurred while reading the file: " + e.getMessage());
-            }
-        }
-        else
-        {
-            System.err.println("The file name you entered either doesn't exist or not readable or isn't a file");
-        }
-    }
-    public static void cat_V2 (String File1,String File2) //this function takes TWO file names,concat them and print them
-    {
-        File MyFirstFile = new File(File1);
-        File MySectFile = new File(File2);
-        if (!MyFirstFile.exists() || !MyFirstFile.canRead() || !MyFirstFile.isFile())
-            System.err.println("The first file name you entered either doesn't exist or not readable or isn't a file");
-        else if (!MySectFile.exists() || !MySectFile.canRead() || !MySectFile.isFile())
-            System.err.println("The second file name you entered either doesn't exist or not readable or isn't a file");
-        else
-        {
-            try
-            {
-                BufferedReader Reader1 = new BufferedReader(new FileReader(File1));
-                BufferedReader Reader2 = new BufferedReader(new FileReader(File2));
-                String line1,line2;
-                while ((line1=Reader1.readLine())!=null)
-                {
-                    System.out.println(line1);
+    public static String cat (String[] args){
+        StringBuilder output = new StringBuilder();
+        File file1 = new File(args[0]);
+        if (file1.exists() && file1.isFile() && file1.canRead()) {
+            try {
+                BufferedReader Reader1 = new BufferedReader(new FileReader(file1));
+                String line1;
+                while ((line1 = Reader1.readLine()) != null) {
+                    output.append(line1).append('\n');
                 }
                 Reader1.close();
-
-                while ((line2=Reader2.readLine())!=null)
-                {
-                    System.out.println(line2);
-                }
-                Reader2.close();
+            } catch (IOException e) {
+                System.err.println("An error occurred while reading the first file: " + e.getMessage());
             }
-            catch (IOException e)
-            {
-                System.err.println("An error occurred while reading the file: " + e.getMessage());
-            }
-
-
         }
-    }
-    public static void WC (String FName)
-    {
-        int Lines=0,Words=0,Chars=0;
-        File file = new File(FName);
-        if (!file.exists() || !file.isFile())
-            System.out.println("The file name you entered either doesn't exist or isn't a file.");
         else
-        {
-            try
-            {
+            System.err.println("The file name you entered either doesn't exist or not readable or isn't a file");
+        if(args.length > 1){
+            File file2 = new File(args[1]);
+            if (!file2.exists() || !file2.canRead() || !file2.isFile())
+                System.out.println("The second file name you entered either doesn't exist or not readable or isn't a file");
+            else {
+                try {
+                    BufferedReader Reader2 = new BufferedReader(new FileReader(args[1]));
+                    String line2;
+                    while ((line2=Reader2.readLine())!=null)
+                        output.append(line2).append('\n');
+                    Reader2.close();
+                }
+                catch (IOException e) {
+                    System.err.println("An error occurred while reading the second file: " + e.getMessage());
+                }
+            }
+        }
+        return String.valueOf(output);
+    }
+    public static String wc (String arg) {
+        String output = "";
+        int Lines=0,Words=0,Chars=0;
+        File file = new File(arg);
+        if (!file.exists() || !file.isFile())
+            System.err.println("The file name you entered either doesn't exist or isn't a file.");
+        else {
+            try {
                 BufferedReader reader = new BufferedReader(new FileReader(file));
                 String line;
-                while ((line = reader.readLine()) != null)
-                {
+                while ((line = reader.readLine()) != null) {
                     Lines++;
                     Chars += line.length();
-                    Words += line.split("\\s+").length; // Counting words (split by spaces)
+                    Words += line.split(" ").length;
                 }
                 reader.close();
-            }
-            catch (IOException e)
-            {
+            } catch (IOException e) {
                 System.err.println("An error occurred while reading the file: " + e.getMessage());
             }
-            System.out.println(Lines + " " + Words + " " + Chars + " " + FName);
+            output += Lines + " " + Words + " " + Chars + " " + arg;
         }
+        return output;
     }
-    public void chooseCommandAction() throws IOException
-    {
-        while (true)
-        {
+    public void chooseCommandAction() throws IOException {
+        while (true) {
             System.out.print('>');
+
             String input;
             Scanner scanner = new Scanner(System.in);
             input = scanner.nextLine();
-            input = input.replace("\\", "\\\\");
-            if (parser.parse(input))
-            {
-                String commandName = parser.getCommandName();
-                String[] args = parser.getArgs();
 
-                if (input.contains(">"))
-                {
-                    String fileName = input.substring(input.indexOf('>')+2);
-                    File file = new File(pwd(), fileName);
-                    boolean b = file.createNewFile();
-                    if(!b)
-                    {
-                        System.out.println("Couldn't create file");
-                        continue;
-                    }
-                    FileWriter writer = new FileWriter(file, false);
-                    if(input.contains("pwd"))
-                    {
-                        String output = pwd();
-                        writer.write(output);
-                    }
-                    else if(input.contains("ls -r"))
-                    {
-                        StringBuilder output = ls_r();
-                        writer.write(String.valueOf(output));
-                    }
-                    else
-                    {
-                        String arg = input.substring(input.indexOf(" ")+1, input.indexOf('>')-1);
-                        if (input.contains("mkdir")) {
-                            String[] argsList = arg.split(" ");
-                            writer.write(String.valueOf(mkdir(argsList)));
-                        } else if (input.contains("rmdir")) {
-                            writer.write(rmdir(arg));
-                        } else if (input.contains("rm")) {
-                            writer.write(rm(arg));
-                        }
-                    }
-                    writer.close();
-                }
-                else
-                {
-                    switch (commandName)
-                    {
-                        case "pwd" ->{
-                            System.out.println(pwd());
-                            CommandHistory.add("pwd");
-                        }
-                        case "ls" -> {
-                            StringBuilder output = ls_r();
-                            System.out.println(output);
-                            CommandHistory.add("ls -r");
-                        }
-                        case "mkdir" -> {
-                            System.out.println(mkdir(args));
-                            CommandHistory.add("mkdir");
-                        }
-                        case "touch" -> {
-                            if (args.length == 1)
-                            {
-                                System.out.println(touch(args[0]));
-                                CommandHistory.add("touch");
-                                CommandHistory.add(args[0]);
-                            } else {
-                                System.out.println("Error: touch takes 1 argument");
-                            }
-
-                        }
-                        case "rmdir" -> {
-                            if (args.length == 1)
-                            {
-                                if (args[0].equals("*"))
-                                {
-                                    System.out.println(rmdir(args[0]));
-                                }
-                                else
-                                {
-                                    System.out.println(rmdir(args[0]));
-                                }
-                                CommandHistory.add("rmdir");
-                            } else {
-                                System.out.println("Error: rmdir takes ONLY 1 argument");
-                            }
-                        }
-                        case "rm" -> {
-                            if (args.length == 1)
-                            {
-                                System.out.println(rm(args[0]));
-                                CommandHistory.add("rm");
-                                CommandHistory.add(args[0]);
-                            }
-                            else {
-                                System.out.println("Error: rm takes ONLY 1 argument");
-                            }
-                        }
-                        case "echo" -> {
-                            if (args.length == 1)
-                            {
-                                echo(args[0]);
-                                CommandHistory.add("echo");
-                                CommandHistory.add(args[0]);
-                            } else {
-                                System.out.println("Error: echo take 1 argument ");
-                            }
-
-                        }
-                        case "cp_r"->{
-                            if (args.length==2)
-                            {
-                                cp_r(args[0],args[1]);
-                                CommandHistory.add("cp -r");
-                                CommandHistory.add(args[0]);
-                                CommandHistory.add(args[1]);
-                            }
-                            else
-                                System.out.println("Error: cp -r takes ONLY 2 arguments ");
-
-                        }
-                        case "WC"->{
-                            if (args.length==1)
-                            {
-                                WC(args[0]);
-                                CommandHistory.add("WC");
-                                CommandHistory.add(args[0]);
-                            }
-                            else
-                                System.out.println("Error: WC takes ONLY 1 argument ");
-
-                        }
-                        case "cat"-> {
-                            if (args.length==1)
-                            {
-                                cat_V1(args[0]);
-                                CommandHistory.add("cat");
-                                CommandHistory.add(args[0]);
-                            }
-                            else if (args.length==2)
-                            {
-                                cat_V1(args[0]);
-                                cat_V1(args[1]);
-//                                cat_V2(args[0], args[1]);
-                                CommandHistory.add("cat");
-                                CommandHistory.add(args[0]);
-                                CommandHistory.add("arg2");  //a flag for sec arg
-                                CommandHistory.add(args[1]);
-                            }
-                            else
-                                System.out.println("Error: cat takes EITHER 1 OR 2 arguments ONLY ");
-                        }
-                        case "history"->{
-                            CommandHistory.add("history");
-                            int idx=0,OutPutCtr=1;
-                            while (idx<=CommandHistory.size())
-                            {
-                                if (CommandHistory.get(idx).equals("touch") || CommandHistory.get(idx).equals("echo") || CommandHistory.get(idx).equals("WC") || CommandHistory.get(idx).equals("rm") || CommandHistory.get(idx).equals("rmdir"))
-                                {
-                                    System.out.println(OutPutCtr + " " + CommandHistory.get(idx) + " " + CommandHistory.get(idx+1));
-                                    idx+=2;
-                                    OutPutCtr++;
-                                }
-                                else if (CommandHistory.get(idx).equals("cp -r"))
-                                {
-                                    System.out.println(OutPutCtr + " " + CommandHistory.get(idx) + " " + CommandHistory.get(idx+1) + " " + CommandHistory.get(idx+2));
-                                    idx+=3;
-                                    OutPutCtr++;
-                                }
-                                else if (CommandHistory.get(idx).equals("cat"))
-                                {
-                                    if(!CommandHistory.get(idx+2).equals("arg2"))
-                                    {
-                                        System.out.println(OutPutCtr + " " + CommandHistory.get(idx) + " " + CommandHistory.get(idx+1));
-                                        idx+=2;
-                                        OutPutCtr++;
-                                    }
-                                    else
-                                    {
-                                        System.out.println(OutPutCtr + " " + CommandHistory.get(idx) + " " + CommandHistory.get(idx+1) + " " + CommandHistory.get(idx+3));
-                                        idx+=4;
-                                        OutPutCtr++;
-                                    }
-                                }
-                                else if (CommandHistory.get(idx).equals("ls -r") || CommandHistory.get(idx).equals("pwd") || CommandHistory.get(idx).equals("mkdir"))
-                                {
-                                    System.out.println(OutPutCtr + " " + CommandHistory.get(idx));
-                                    idx++;
-                                    OutPutCtr++;
-                                }
-                            }
-                            System.out.println(OutPutCtr + " " + "History");
-                        }
-                    }
-                }
+            boolean writeToFile = false;
+            String fileName = input.substring(input.indexOf('>')+1);
+            fileName = fileName.trim();
+            if(input.contains(">")) {
+                writeToFile = true;
             }
 
-            if (Objects.equals(input, "exit")) break;
+            if (parser.parse(input)) {
+                CommandHistory.add(input);
+                String commandName = parser.getCommandName();
+                String[] args = parser.getArgs();
+                switch (commandName) {
+                    case "echo" -> {
+                        if(writeToFile){
+                            File file = new File(pwd(), fileName);
+                            try(FileWriter writer = new FileWriter(file)){
+                                writer.write(echo(args[0]));
+                            }catch(IOException e){
+                                System.err.println("Failed to create the file for output");
+                            }
+                        }
+                        else System.out.println(echo(args[0]));
+                    }
+                    case "pwd" -> {
+                        if(writeToFile) {
+                            File file = new File(pwd(), fileName);
+                            try(FileWriter writer = new FileWriter(file)){
+                                writer.write(pwd());
+                            }catch(IOException e){
+                                System.err.println("Failed to create the file for output");
+                            }
+                        }
+                        else System.out.println(pwd());
+                    }
+                    case "ls" -> {
+                        if(writeToFile){
+                            File file = new File(pwd(), fileName);
+                            try(FileWriter writer = new FileWriter(file)){
+                                writer.write(ls());
+                            }catch(IOException e){
+                                System.err.println("Failed to create the file for output");
+                            }
+                        }
+                        else System.out.println(ls());
+                    }
+                    case "ls -r" -> {
+                        if(writeToFile){
+                            File file = new File(pwd(), fileName);
+                            try(FileWriter writer = new FileWriter(file)){
+                                writer.write(ls_r());
+                            }catch(IOException e){
+                                System.err.println("Failed to create the file for output");
+                            }
+                        }
+                        else System.out.println(ls_r());
+                    }
+                    case "mkdir" -> mkdir(args);
+                    case "touch" -> touch(args[0]);
+                    case "rmdir" -> rmdir(args[0]);
+                    case "rm" -> rm(args[0]);
+                    case "cp -r"-> cp_r(args);
+                    case "wc"-> {
+                        if(writeToFile){
+                            File file = new File(pwd(), fileName);
+                            try(FileWriter writer = new FileWriter(file)){
+                                writer.write(wc(args[0]));
+                            }catch(IOException e){
+                                System.err.println("Failed to create the file for output");
+                            }
+                        }
+                        else System.out.println(wc(args[0]));
+                    }
+                    case "cat"-> {
+                        if(writeToFile){
+                            File file = new File(pwd(), fileName);
+                            try(FileWriter writer = new FileWriter(file)){
+                                writer.write(cat(args));
+                            }catch(IOException e){
+                                System.err.println("Failed to create the file for output");
+                            }
+                        }
+                        else System.out.println(cat(args));
+                    }
+                    case "history"-> {
+                        CommandHistory.add("history");
+                        if(writeToFile){
+                            File file = new File(pwd(), fileName);
+                            try(FileWriter writer = new FileWriter(file)){
+                                for (String str:CommandHistory) writer.write(str + '\n');
+                            }catch(IOException e){
+                                System.err.println("Failed to create the file for output");
+                            }
+                        }
+                        else
+                            for (String str:CommandHistory) System.out.println(str);
+                    }
+                }
+                if(Objects.equals(commandName, "exit"))break;
+            }
         }
     }
 }
