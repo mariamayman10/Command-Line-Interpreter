@@ -1,11 +1,7 @@
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.util.Scanner;
 import java.nio.file.StandardCopyOption;
 import java.util.Vector;
@@ -138,7 +134,7 @@ public class Terminal
         }
         return output;
     }
-    public static void cp_r (String F1,String F2) throws IOException
+/*    public static void cp_r (String F1,String F2) throws IOException
     {
         File Dir1=new File(F1);
         File Dir2=new File(F2);
@@ -171,7 +167,45 @@ public class Terminal
                 Files.copy(Dir1.toPath(), Dir2.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         }
+    }*/
+
+    public static void cp_r(String sourceDir, String destinationDir) throws IOException
+    {
+        Path sourcePath = Paths.get(sourceDir);
+        Path destinationPath = Paths.get(destinationDir);
+        if (!Files.exists(sourcePath) || !Files.isDirectory(sourcePath) || !Files.isReadable(sourcePath))
+        {
+            System.err.println("The source directory is either missing, not readable, or not a directory.");
+        }
+        else if (!Files.exists(destinationPath) || !Files.isDirectory(destinationPath) || !Files.isWritable(destinationPath))
+        {
+            System.err.println("The destination directory is either missing, not writable, or not a directory.");
+        }
+        else
+        {
+            Deque<Path> stack = new ArrayDeque<>();
+            stack.push(sourcePath);
+
+            while (!stack.isEmpty())
+            {
+                Path currentPath = stack.pop();
+                Path targetPath = destinationPath.resolve(sourcePath.relativize(currentPath));
+
+                if (Files.isDirectory(currentPath))
+                {
+                    Files.createDirectories(targetPath);
+                    Files.list(currentPath).forEach(child -> stack.push(child));
+                }
+                else
+                {
+                    Files.copy(currentPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                }
+            }
+
+            System.out.println("Directory contents copied successfully.");
+        }
     }
+
     public static void cat_V1 (String InputFile)         //this function takes ONE file name and print its content
     {
         //we make an object of type File named "file" & put "InputFile" in it in order to make sure of its existency later
@@ -231,6 +265,8 @@ public class Terminal
             {
                 System.err.println("An error occurred while reading the file: " + e.getMessage());
             }
+
+
         }
     }
     public static void WC (String FName)
@@ -407,7 +443,9 @@ public class Terminal
                             }
                             else if (args.length==2)
                             {
-                                cat_V2(args[0], args[1]);
+                                cat_V1(args[0]);
+                                cat_V1(args[1]);
+//                                cat_V2(args[0], args[1]);
                                 CommandHistory.add("cat");
                                 CommandHistory.add(args[0]);
                                 CommandHistory.add("arg2");  //a flag for sec arg
