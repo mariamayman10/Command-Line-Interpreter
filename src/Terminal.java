@@ -53,17 +53,20 @@ public class Terminal {
     }
     public static void mkdir(String[] args) {//handle forward slash
         for (String arg : args) {
+            if(arg.contains("/")){
+                arg = arg.replace("/", "\\");
+            }
             if (arg.contains("\\")) {
                 String newArg = arg.substring(0, arg.lastIndexOf("\\"));
                 Path path = Paths.get(newArg);
                 if (Files.exists(path) && Files.isDirectory(path)) {
                     String directoryName = arg.substring(arg.lastIndexOf("\\") + 1);
                     File directory = new File(newArg, directoryName);
-                    if (!directory.mkdir()) System.err.println("Directory Already Exists");
-                } else System.err.println("Invalid Path, Directory isn't created");
+                    if (!directory.mkdir()) System.out.println("Directory " + directoryName + " Already Exists");
+                } else System.out.println("Invalid Path, Directory isn't created");
             } else {
                 File directory = new File(pwd(), arg);
-                if (!directory.mkdir()) System.err.println("Directory Already Exists");
+                if (!directory.mkdir()) System.out.println("Directory " + arg + " Already Exists");
             }
         }
     }
@@ -85,38 +88,38 @@ public class Terminal {
                 File directory = new File(String.valueOf(path));
                 File[] files = directory.listFiles();
                 if (files != null && files.length == 0) {
-                    if (!directory.delete()) System.err.println("Failed to Delete Directory");
+                    if (!directory.delete()) System.out.println("Failed to Delete Directory");
                 }
                 else
-                    System.err.println("Directory isn't empty");
+                    System.out.println("Directory isn't empty");
             }
             else
-                System.err.println("Invalid Path");
+                System.out.println("Invalid Path");
         }
     }
     public static void rm(String arg) {
         File file = new File(pwd(), arg);
         if(!file.isFile() && file.isDirectory()){
-            System.err.println("Directory is given instead of File");
+            System.out.println("Directory is given instead of File");
         }
         else if (file.exists()){
-            if (!file.delete()) System.err.println("Failed to delete the file");
+            if (!file.delete()) System.out.println("Failed to delete the file");
         }
-        else System.err.println("File doesn't exist");
+        else System.out.println("File doesn't exist");
     }
     public static void touch(String arg) {
         File file = new File(pwd(), arg);
         if(!file.isFile() && file.isDirectory()){
-            System.err.println("It is an existed Directory");
+            System.out.println("It is an existed Directory");
         }
         else if (file.exists())
-            System.err.println("File already exist");
+            System.out.println("File already exist");
         else {
             try {
                 if (!file.createNewFile())
-                    System.err.println("Failed to create the file");
+                    System.out.println("Failed to create the file");
             } catch (IOException e) {
-                System.err.println("Error occurred: " + e.getMessage());
+                System.out.println("outor occurred: " + e.getMessage());
             }
         }
     }
@@ -124,9 +127,9 @@ public class Terminal {
         Path sourcePath = Paths.get(args[0]);
         Path destinationPath = Paths.get(args[1]);
         if (!Files.exists(sourcePath) || !Files.isReadable(sourcePath))
-            System.err.println("The source path is either missing or not readable.");
+            System.out.println("The source path is either missing or not readable.");
         else if (!Files.exists(destinationPath) || !Files.isWritable(destinationPath))
-            System.err.println("The destination path is either missing or not writable.");
+            System.out.println("The destination path is either missing or not writable.");
         else {
             try {
                 Files.walkFileTree(sourcePath, new SimpleFileVisitor<Path>() {
@@ -145,7 +148,7 @@ public class Terminal {
                     }
                 });
             } catch (IOException e) {
-                System.err.println("Failed to copy files and directories: " + e.getMessage());
+                System.out.println("Failed to copy files and directories: " + e.getMessage());
             }
         }
     }
@@ -161,11 +164,11 @@ public class Terminal {
                 }
                 Reader1.close();
             } catch (IOException e) {
-                System.err.println("An error occurred while reading the first file: " + e.getMessage());
+                System.out.println("An error occurred while reading the first file: " + e.getMessage());
             }
         }
         else
-            System.err.println("The file name you entered either doesn't exist or not readable or isn't a file");
+            System.out.println("The file name you entered either doesn't exist or not readable or isn't a file");
         if(args.length > 1){
             File file2 = new File(args[1]);
             if (!file2.exists() || !file2.canRead() || !file2.isFile())
@@ -179,7 +182,7 @@ public class Terminal {
                     Reader2.close();
                 }
                 catch (IOException e) {
-                    System.err.println("An error occurred while reading the second file: " + e.getMessage());
+                    System.out.println("An error occurred while reading the second file: " + e.getMessage());
                 }
             }
         }
@@ -190,7 +193,7 @@ public class Terminal {
         int Lines=0,Words=0,Chars=0;
         File file = new File(arg);
         if (!file.exists() || !file.isFile())
-            System.err.println("The file name you entered either doesn't exist or isn't a file.");
+            System.out.println("The file name you entered either doesn't exist or isn't a file.");
         else {
             try {
                 BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -202,7 +205,7 @@ public class Terminal {
                 }
                 reader.close();
             } catch (IOException e) {
-                System.err.println("An error occurred while reading the file: " + e.getMessage());
+                System.out.println("An outor occurred while reading the file: " + e.getMessage());
             }
             output += Lines + " " + Words + " " + Chars + " " + arg;
         }
@@ -234,7 +237,7 @@ public class Terminal {
                             try(FileWriter writer = new FileWriter(file)){
                                 writer.write(echo(args[0]));
                             }catch(IOException e){
-                                System.err.println("Failed to create the file for output");
+                                System.out.println("Failed to create the file for output");
                             }
                         }
                         else System.out.println(echo(args[0]));
@@ -245,7 +248,7 @@ public class Terminal {
                             try(FileWriter writer = new FileWriter(file)){
                                 writer.write(pwd());
                             }catch(IOException e){
-                                System.err.println("Failed to create the file for output");
+                                System.out.println("Failed to create the file for output");
                             }
                         }
                         else System.out.println(pwd());
@@ -256,7 +259,7 @@ public class Terminal {
                             try(FileWriter writer = new FileWriter(file)){
                                 writer.write(ls());
                             }catch(IOException e){
-                                System.err.println("Failed to create the file for output");
+                                System.out.println("Failed to create the file for output");
                             }
                         }
                         else System.out.println(ls());
@@ -267,7 +270,7 @@ public class Terminal {
                             try(FileWriter writer = new FileWriter(file)){
                                 writer.write(ls_r());
                             }catch(IOException e){
-                                System.err.println("Failed to create the file for output");
+                                System.out.println("Failed to create the file for output");
                             }
                         }
                         else System.out.println(ls_r());
@@ -283,7 +286,7 @@ public class Terminal {
                             try(FileWriter writer = new FileWriter(file)){
                                 writer.write(wc(args[0]));
                             }catch(IOException e){
-                                System.err.println("Failed to create the file for output");
+                                System.out.println("Failed to create the file for output");
                             }
                         }
                         else System.out.println(wc(args[0]));
@@ -294,24 +297,24 @@ public class Terminal {
                             try(FileWriter writer = new FileWriter(file)){
                                 writer.write(cat(args));
                             }catch(IOException e){
-                                System.err.println("Failed to create the file for output");
+                                System.out.println("Failed to create the file for output");
                             }
                         }
                         else System.out.println(cat(args));
                     }
                     case "history"-> {
-                        CommandHistory.add("history");
                         if(writeToFile){
                             File file = new File(pwd(), fileName);
                             try(FileWriter writer = new FileWriter(file)){
                                 for (String str:CommandHistory) writer.write(str + '\n');
                             }catch(IOException e){
-                                System.err.println("Failed to create the file for output");
+                                System.out.println("Failed to create the file for output");
                             }
                         }
                         else
                             for (String str:CommandHistory) System.out.println(str);
                     }
+                    default -> System.out.println("Wrong Command");
                 }
                 if(Objects.equals(commandName, "exit"))break;
             }

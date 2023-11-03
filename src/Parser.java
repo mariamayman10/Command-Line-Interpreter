@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Parser {
     private String commandName;
@@ -10,18 +11,17 @@ public class Parser {
             commandName = "echo";
             input = input.substring(4);
             if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
 
             List<String> arguments = new ArrayList<>();
             if(input.contains(">")){
-                String sAfter = input.substring(input.indexOf(">")+1), sBefore = input.substring(0, input.indexOf(">"));
+                String sAfter = input.substring(input.indexOf(">")+1);
                 sAfter = sAfter.trim();
-                sBefore = sBefore.trim();
-                if(sAfter.isEmpty() || sBefore.isEmpty()){
-                    System.err.println("Wrong Command");
+                if(sAfter.isEmpty()){
+                    System.out.println("Wrong Command");
                     return false;
                 }
                 else arguments.add(input.substring(0, input.indexOf('>')));
@@ -35,7 +35,7 @@ public class Parser {
             commandName = "pwd";
             input = input.substring(3);
             if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
@@ -43,7 +43,7 @@ public class Parser {
                 String sAfter = input.substring(input.indexOf(">")+1);
                 sAfter = sAfter.trim();
                 if(sAfter.isEmpty()){
-                    System.err.println("Wrong Command");
+                    System.out.println("Wrong Command");
                     return false;
                 }
             }
@@ -54,7 +54,7 @@ public class Parser {
             commandName = "ls -r";
             input = input.substring(5);
             if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
@@ -63,12 +63,12 @@ public class Parser {
                 String sAfter = input.substring(input.indexOf(">")+1);
                 sAfter = sAfter.trim();
                 if(sAfter.isEmpty()){
-                    System.err.println("Wrong Command");
+                    System.out.println("Wrong Command");
                     return false;
                 }
             }
             if(input.length() > 0 && !input.contains(">")){
-                System.err.println("Wrong Command");
+                System.out.println("Wrong Command");
                 return false;
             }
             else return true;
@@ -77,8 +77,8 @@ public class Parser {
         else if(input.startsWith("ls")){
             commandName = "ls";
             input = input.substring(2);
-            if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+            if((input.length() > 0 && input.charAt(0) != ' ')){
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
@@ -87,48 +87,55 @@ public class Parser {
                 String sAfter = input.substring(input.indexOf(">")+1);
                 sAfter = sAfter.trim();
                 if(sAfter.isEmpty()){
-                    System.err.println("Wrong Command");
+                    System.out.println("Wrong Command");
                     return false;
                 }
             }
-            return input.length() == 0 || input.contains(">");
+            if(input.length() > 0 && !input.contains(">")){
+                System.out.println("Wrong Command");
+                return false;
+            }
+            else return true;
         }
 
         else if(input.startsWith("mkdir")){
             commandName = "mkdir";
             input = input.substring(5);
-            if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+            if((input.length() > 0 && input.charAt(0) != ' ') || input.contains(">")){
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
+            List<String> directoryList = new ArrayList<>();
+            Pattern pattern = Pattern.compile("\"(.*?)\"|([^\\s]+)");
+            Matcher matcher = pattern.matcher(input);
 
-            if(input.split(" ").length >= 1){
-                args = input.split(" ");
-                return true;
+            while (matcher.find()) {
+                String dir = matcher.group(1);
+                if (dir == null) {
+                    dir = matcher.group(2);
+                }
+                directoryList.add(dir);
             }
-            else{
-                System.err.println("At least one argument required");
-                return false;
-            }
+            args = directoryList.toArray(new String[0]);
+            return true;
         }
 
-        // no argument gives directory isn't empty
         else if(input.startsWith("rmdir")){
             commandName = "rmdir";
             input = input.substring(5);
-            if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+            if((input.length() > 0 && input.charAt(0) != ' ') || input.contains(">")){
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
 
-            if(input.split(" ").length == 1){
+            if(!input.isEmpty() && !input.equals(" ") && input.split(" ").length == 1){
                 args = input.split(" ");
                 return true;
             }
             else{
-                System.err.println("Only one argument required");
+                System.out.println("Only one argument required");
                 return false;
             }
         }
@@ -136,18 +143,18 @@ public class Parser {
         else if(input.startsWith("rm")){
             commandName = "rm";
             input = input.substring(2);
-            if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+            if((input.length() > 0 && input.charAt(0) != ' ') || input.contains(">")){
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
 
-            if(input.split(" ").length == 1){
+            if(!input.isEmpty() && !input.equals(" ") && input.split(" ").length == 1){
                 args = input.split(" ");
                 return true;
             }
             else{
-                System.err.println("Only one argument required");
+                System.out.println("Only one argument required");
                 return false;
             }
         }
@@ -155,18 +162,18 @@ public class Parser {
         else if(input.startsWith("touch")){
             commandName = "touch";
             input = input.substring(5);
-            if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+            if((input.length() > 0 && input.charAt(0) != ' ') || input.contains(">")){
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
 
-            if(input.split(" ").length == 1){
+            if(!input.isEmpty() && !input.equals(" ") && input.split(" ").length == 1){
                 args = input.split(" ");
                 return true;
             }
             else{
-                System.err.println("Only one argument required");
+                System.out.println("Only one argument required");
                 return false;
             }
         }
@@ -174,8 +181,8 @@ public class Parser {
         else if(input.startsWith("cp -r")){
             commandName = "cp -r";
             input = input.substring(5);
-            if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+            if((input.length() > 0 && input.charAt(0) != ' ') || input.contains(">")){
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
@@ -185,7 +192,7 @@ public class Parser {
                 return true;
             }
             else{
-                System.err.println("Only 2 Arguments required");
+                System.out.println("Only 2 Arguments required");
                 return false;
             }
         }
@@ -194,30 +201,27 @@ public class Parser {
             commandName = "cat";
             input = input.substring(3);
             if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
 
-            List<String> arguments = new ArrayList<>();
             if(input.contains(">")){
                 String sAfter = input.substring(input.indexOf(">")+1), sBefore = input.substring(0, input.indexOf(">"));
                 sAfter = sAfter.trim();
                 sBefore = sBefore.trim();
                 if(sAfter.isEmpty() || sBefore.isEmpty()){
-                    System.err.println("Wrong Command");
+                    System.out.println("Wrong Command");
                     return false;
                 }
-                else arguments.add(input.substring(0, input.indexOf('>')));
+                else args = input.substring(0, input.indexOf(">")).split(" ");
             }
-            else arguments.add(input);
-
-            if(input.split(" ").length == 1 || input.split(" ").length == 2){
-                args = arguments.toArray(new String[0]);
+            else args = input.split(" ");
+            if((args.length == 1 || args.length == 2) && !input.isEmpty()){
                 return true;
             }
             else{
-                System.err.println("Takes one or two arguments only");
+                System.out.println("At least one argument required");
                 return false;
             }
         }
@@ -226,31 +230,28 @@ public class Parser {
             commandName = "wc";
             input = input.substring(2);
             if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
 
-            List<String> arguments = new ArrayList<>();
             if(input.contains(">")){
                 String sAfter = input.substring(input.indexOf(">")+1), sBefore = input.substring(0, input.indexOf(">"));
                 sAfter = sAfter.trim();
                 sBefore = sBefore.trim();
                 if(sAfter.isEmpty() || sBefore.isEmpty()){
-                    System.err.println("Wrong Command");
+                    System.out.println("Wrong Command");
                     return false;
                 }
-                else arguments.add(input.substring(0, input.indexOf('>')));
+                else args = input.substring(0, input.indexOf(">")).split(" ");
             }
-            else arguments.add(input);
-
-            if(input.split(" ").length == 1){
-                args = arguments.toArray(new String[0]);
-                return true;
+            else args = input.split(" ");
+            if(args.length != 1 || input.isEmpty()){
+                System.out.println("Only one argument required");
+                return false;
             }
             else{
-                System.err.println("Only one argument required");
-                return false;
+                return true;
             }
         }
 
@@ -258,7 +259,7 @@ public class Parser {
             commandName = "history";
             input = input.substring(7);
             if(input.length() > 0 && input.charAt(0) != ' '){
-                System.err.println("Wrong Command");
+                System.out.println("Wrong Command");
                 return false;
             }
             input = input.trim();
@@ -267,19 +268,19 @@ public class Parser {
                 String sAfter = input.substring(input.indexOf(">")+1);
                 sAfter = sAfter.trim();
                 if(sAfter.isEmpty()){
-                    System.err.println("Wrong Command");
+                    System.out.println("Wrong Command");
                     return false;
                 }
 
-                if(input.split(input.substring(0, input.indexOf('>'))).length > 0){
-                    System.err.println("Take no arguments");
+                if(!input.substring(0, input.indexOf('>')).isEmpty()){
+                    System.out.println("Take no arguments");
                     return false;
                 }
                 else return true;
             }
             else {
                 if(!input.isEmpty()){
-                    System.err.println("Take no arguments");
+                    System.out.println("Take no arguments");
                     return false;
                 }
                 else return true;
@@ -297,7 +298,7 @@ public class Parser {
         }
 
         else{
-            System.err.println("Wrong Command");
+            System.out.println("Wrong Command");
             return false;
         }
     }
